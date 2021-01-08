@@ -2,32 +2,8 @@
 #include <functional>
 #include <iostream>
 #include <string>
-#include <string_view>
 
-/**
- * Found at 
- * https://stackoverflow.com/questions/81870/is-it-possible-to-print-a-variables-type-in-standard-c/56766138#56766138
- */
-template <typename T>
-constexpr auto type_name() noexcept {
-  std::string_view name = "Error: unsupported compiler", prefix, suffix;
-#ifdef __clang__
-  name = __PRETTY_FUNCTION__;
-  prefix = "auto type_name() [T = ";
-  suffix = "]";
-#elif defined(__GNUC__)
-  name = __PRETTY_FUNCTION__;
-  prefix = "constexpr auto type_name() [with T = ";
-  suffix = "]";
-#elif defined(_MSC_VER)
-  name = __FUNCSIG__;
-  prefix = "auto __cdecl type_name<";
-  suffix = ">(void) noexcept";
-#endif
-  name.remove_prefix(prefix.size());
-  name.remove_suffix(suffix.size());
-  return name;
-}
+#include "TypeName.hpp"
 
 static void process(int a) {
     std::cout << "Do nothing. " << '\n';
@@ -61,6 +37,12 @@ struct A {
     }
 
     A operator + ( double r ) const {
+        A res(*this);
+        res.val += r;
+        return res;
+    }
+
+    A operator () (double r) const {
         A res(*this);
         res.val += r;
         return res;
@@ -190,11 +172,15 @@ int main() {
     // This seems impossible.
     // auto N = std::function<void(int)>(process);
 
+    auto O = std::function<A(double)>(objA);
+    auto objO = O(2.2f);
+    std::cout << "objO.val = " << objO.val << '\n';
+
     std::cout << '\n';
 
     std::cout << "call_fn" << '\n';
     call_fn( K, objB, c );
-    // call_fn( M, objB, c ); // This is error. Cannot deduct type int&.
+    // call_fn( M, objB, c ); // This is an error. Cannot deduct type int&.
 
     return 0;
 }
